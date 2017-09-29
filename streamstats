@@ -1,6 +1,6 @@
 #Example streamstats SPL that runs over Last 8 days. 
 #Add/Remove streamstats pipes as needed to match your desired timeframe.
-#Window uses 12, assuming 5 min metric intervals/
+#Window uses 12, assuming 5 min metric intervals
 #This search uses multipler of 5. You can use this to change the sensitivity of alerts. Experiement in MLTK for best results!
 
 
