@@ -1,0 +1,24 @@
+
+##Example SPL for a search running over the last 8 days, no snap to start of day
+##The Window is set to 12 and assumes you are using 5m intervals
+##The "exact(5)" creates a multipler of 5, you can alter this to tweak sensitivity of the outlier search, or use MLTK to experiement
+
+| tstats prestats=t count WHERE index=main by _time span=300s 
+| timechart span=300s partial=f count 
+| timewrap d series=short 
+| rename s0 AS Today 
+| foreach s* 
+    [ eval d<<MATCHSTR>> = Today - <<FIELD>>] 
+| streamstats window=12 median(d*) as median_*
+| foreach median_* 
+    [ eval absDev<<MATCHSTR>> = abs(d<<MATCHSTR>> - <<FIELD>>)] 
+| streamstats window=12 median(absDev*) as medianAbsDev*
+| eval isOutlier = 0
+| foreach median_* 
+    [ eval 
+        lowerBound<<MATCHSTR>> = <<FIELD>> - medianAbsDev<<MATCHSTR>>*exact(5), 
+        upperBound<<MATCHSTR>> = <<FIELD>> + medianAbsDev<<MATCHSTR>>*exact(5), 
+        isOutlier<<MATCHSTR>> = if(d<<MATCHSTR>> < lowerBound<<MATCHSTR>> OR d<<MATCHSTR>> > upperBound<<MATCHSTR>>, 1, 0), 
+        isOutlier = isOutlier + isOutlier<<MATCHSTR>>] 
+| eval isOutlier=if(isOutlier>3.5, 1, 0)
+| fields _time Today isOutlier
