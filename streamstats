@@ -1,0 +1,32 @@
+#Example streamstats SPL that runs over Last 8 days. 
+#Add/Remove streamstats pipes as needed to match your desired timeframe.
+#Window uses 12, assuming 5 min metric intervals/
+#This search uses multipler of 5. You can use this to change the sensitivity of alerts. Experiement in MLTK for best results!
+
+
+index=`meta_woot_read_summary` sourcetype=meta_woot orig_sourcetype!=stash orig_sourcetype=* orig_host=* orig_index=main 
+| stats sum(count) as totalEvents by _time orig_sourcetype  
+| streamstats time_window=1d first(totalEvents) as d1 by orig_sourcetype
+| streamstats time_window=2d first(totalEvents) as d2 by orig_sourcetype 
+| streamstats time_window=3d first(totalEvents) as d3 by orig_sourcetype
+| streamstats time_window=4d first(totalEvents) as d4 by orig_sourcetype
+| streamstats time_window=5d first(totalEvents) as d5 by orig_sourcetype
+| streamstats time_window=6d first(totalEvents) as d6 by orig_sourcetype
+| streamstats time_window=7d first(totalEvents) as d7 by orig_sourcetype
+| foreach d* 
+    [ eval e<<MATCHSTR>> = totalEvents - <<FIELD>>] 
+| streamstats window=12 median(e*) as median_* by orig_sourcetype
+| foreach median_* 
+    [ eval absDev<<MATCHSTR>> = abs(e<<MATCHSTR>> - <<FIELD>>)] 
+| streamstats window=12 median(absDev*) as medianAbsDev* by orig_sourcetype 
+| eval isOutlier = 0
+| foreach median_* 
+    [ eval 
+        lowerBound<<MATCHSTR>> = <<FIELD>> - medianAbsDev<<MATCHSTR>>*exact(5), 
+        upperBound<<MATCHSTR>> = <<FIELD>> + medianAbsDev<<MATCHSTR>>*exact(5), 
+        isOutlier<<MATCHSTR>> = if(e<<MATCHSTR>> < lowerBound<<MATCHSTR>> OR e<<MATCHSTR>> > upperBound<<MATCHSTR>>, 1, 0), 
+        isOutlier = isOutlier + isOutlier<<MATCHSTR>>] 
+| eval isOutlier=if(isOutlier>3.5, 1, 0)
+| where isOutlier=1
+| fields _time orig_sourcetype totalEvents isOutlier
+| sort - _time
