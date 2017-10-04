@@ -1,9 +1,11 @@
 # outliers
 Detect Numerical Outliers | .conf2017
+http://conf.splunk.com/files/2017/recordings/detect-numeric-outliers-advances.mp4
+
 
 Splunk searches to detect numerical outliers in time series metrics!
 
-I have uploaded a sample app that contains simple dashboards depicting the timewrap and streamstats versions of the outlier searches. You will need to edit the searches in the panels to create a timechart that makes sense in your environment. 
+I have uploaded a sample app that contains 2 simple dashboards depicting the timewrap and streamstats versions of the outlier searches. You will need to edit the searches in the panels to create a timechart that makes sense in your environment. 
 
 For example, in the timewrap panels, my search begins with:
 
