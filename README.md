@@ -1,5 +1,6 @@
 # outliers
 Detect Numerical Outliers | .conf2017
+
 http://conf.splunk.com/files/2017/recordings/detect-numeric-outliers-advances.mp4
 
 
@@ -9,8 +10,8 @@ I have uploaded a sample app that contains 2 simple dashboards depicting the tim
 
 For example, in the timewrap panels, my search begins with:
 
-| tstats prestats=t count WHERE index=main by _time span=300s 
-| timechart span=300s partial=f count 
+`| tstats prestats=t count WHERE index=main by _time span=300s 
+| timechart span=300s partial=f count `
 
 Replace this with whatever timechart generating search makes sense for you!
 
