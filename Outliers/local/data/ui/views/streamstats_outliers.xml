@@ -1,0 +1,92 @@
+<dashboard>
+  <label>Streamstats Outliers</label>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>index=`meta_woot_read_summary` sourcetype=meta_woot orig_sourcetype!=stash orig_sourcetype=* orig_host=* orig_index=main 
+| stats sum(count) as totalEvents by _time orig_sourcetype  
+| streamstats time_window=1d first(totalEvents) as d1 by orig_sourcetype
+| streamstats time_window=2d first(totalEvents) as d2 by orig_sourcetype 
+| streamstats time_window=3d first(totalEvents) as d3 by orig_sourcetype
+| streamstats time_window=4d first(totalEvents) as d4 by orig_sourcetype
+| streamstats time_window=5d first(totalEvents) as d5 by orig_sourcetype
+| streamstats time_window=6d first(totalEvents) as d6 by orig_sourcetype
+| streamstats time_window=7d first(totalEvents) as d7 by orig_sourcetype
+| foreach d* 
+    [ eval e&lt;&lt;MATCHSTR&gt;&gt; = totalEvents - &lt;&lt;FIELD&gt;&gt;] 
+| streamstats time_window=1d median(e*) as median_* by orig_sourcetype
+| foreach median_* 
+    [ eval absDev&lt;&lt;MATCHSTR&gt;&gt; = abs(e&lt;&lt;MATCHSTR&gt;&gt; - &lt;&lt;FIELD&gt;&gt;)] 
+| streamstats time_window=1h median(absDev*) as medianAbsDev* by orig_sourcetype 
+| eval isOutlier = 0
+| foreach median_* 
+    [ eval 
+        lowerBound&lt;&lt;MATCHSTR&gt;&gt; = &lt;&lt;FIELD&gt;&gt; - medianAbsDev&lt;&lt;MATCHSTR&gt;&gt;*exact(5), 
+        upperBound&lt;&lt;MATCHSTR&gt;&gt; = &lt;&lt;FIELD&gt;&gt; + medianAbsDev&lt;&lt;MATCHSTR&gt;&gt;*exact(5), 
+        isOutlier&lt;&lt;MATCHSTR&gt;&gt; = if(e&lt;&lt;MATCHSTR&gt;&gt; &lt; lowerBound&lt;&lt;MATCHSTR&gt;&gt; OR e&lt;&lt;MATCHSTR&gt;&gt; &gt; upperBound&lt;&lt;MATCHSTR&gt;&gt;, 1, 0), 
+        isOutlier = isOutlier + isOutlier&lt;&lt;MATCHSTR&gt;&gt;] 
+| eval isOutlier=if(isOutlier&gt;3.5, 1, 0)
+| where isOutlier=1
+| fields _time orig_sourcetype totalEvents isOutlier
+| sort - _time</query>
+          <earliest>-8d</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="isOutlier"></format>
+        <format type="color" field="isOutlier">
+          <colorPalette type="map">{"1":#ED8440}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>streamstats outlier</title>
+        <search>
+          <query>index=`meta_woot_read_summary` sourcetype=meta_woot orig_sourcetype!=stash orig_sourcetype=* orig_host=* orig_index=main 
+| stats sum(count) as totalEvents by _time orig_sourcetype  
+| streamstats time_window=1d first(totalEvents) as d1 by orig_sourcetype
+| streamstats time_window=2d first(totalEvents) as d2 by orig_sourcetype 
+| streamstats time_window=3d first(totalEvents) as d3 by orig_sourcetype
+| streamstats time_window=4d first(totalEvents) as d4 by orig_sourcetype
+| streamstats time_window=5d first(totalEvents) as d5 by orig_sourcetype
+| streamstats time_window=6d first(totalEvents) as d6 by orig_sourcetype
+| streamstats time_window=7d first(totalEvents) as d7 by orig_sourcetype
+| foreach d* 
+    [ eval e&lt;&lt;MATCHSTR&gt;&gt; = totalEvents - &lt;&lt;FIELD&gt;&gt;] 
+| streamstats time_window=1d median(e*) as median_* by orig_sourcetype
+| foreach median_* 
+    [ eval absDev&lt;&lt;MATCHSTR&gt;&gt; = abs(e&lt;&lt;MATCHSTR&gt;&gt; - &lt;&lt;FIELD&gt;&gt;)] 
+| streamstats time_window=1h median(absDev*) as medianAbsDev* by orig_sourcetype 
+| eval isOutlier = 0
+| foreach median_* 
+    [ eval 
+        lowerBound&lt;&lt;MATCHSTR&gt;&gt; = &lt;&lt;FIELD&gt;&gt; - medianAbsDev&lt;&lt;MATCHSTR&gt;&gt;*exact(5), 
+        upperBound&lt;&lt;MATCHSTR&gt;&gt; = &lt;&lt;FIELD&gt;&gt; + medianAbsDev&lt;&lt;MATCHSTR&gt;&gt;*exact(5), 
+        isOutlier&lt;&lt;MATCHSTR&gt;&gt; = if(e&lt;&lt;MATCHSTR&gt;&gt; &lt; lowerBound&lt;&lt;MATCHSTR&gt;&gt; OR e&lt;&lt;MATCHSTR&gt;&gt; &gt; upperBound&lt;&lt;MATCHSTR&gt;&gt;, 1, 0), 
+        isOutlier = isOutlier + isOutlier&lt;&lt;MATCHSTR&gt;&gt;] 
+| eval isOutlier=if(isOutlier&gt;3.5, 1, 0)</query>
+          <earliest>-8d</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>

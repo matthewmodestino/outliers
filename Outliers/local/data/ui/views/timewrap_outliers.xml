@@ -1,0 +1,145 @@
+<form>
+  <label>Timewrap Outliers</label>
+  <fieldset submitButton="false">
+    <input type="time" token="field1">
+      <label></label>
+      <default>
+        <earliest>-7d@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="timewrap">
+      <label>Timewrap</label>
+      <choice value="| timewrap d series=short | rename s0 AS Today">Day</choice>
+      <choice value="| timewrap w">Week</choice>
+      <choice value="| timewrap m">Month</choice>
+      <choice value="">None</choice>
+      <default>None</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>KPI - PIck a time series KPI to analyze. tstats, mstats or summaries are the best candidates to ensure performance</title>
+      <chart>
+        <title>7 day Trend</title>
+        <search>
+          <query>| tstats count WHERE index=main by _time span=300s $timewrap$</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="trellis.enabled">0</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>VOTE</title>
+      <chart>
+        <search>
+          <query>| tstats prestats=t count WHERE index=main by _time span=300s 
+| timechart span=300s partial=f count 
+| timewrap d series=short 
+| rename s0 AS Today 
+| foreach s* 
+    [ eval d&lt;&lt;MATCHSTR&gt;&gt; = Today - &lt;&lt;FIELD&gt;&gt;] 
+| streamstats window=12 median(d*) as median_*
+| foreach median_* 
+    [ eval absDev&lt;&lt;MATCHSTR&gt;&gt; = abs(d&lt;&lt;MATCHSTR&gt;&gt; - &lt;&lt;FIELD&gt;&gt;)] 
+| streamstats window=12 median(absDev*) as medianAbsDev*
+| eval isOutlier = 0
+| foreach median_* 
+    [ eval 
+        lowerBound&lt;&lt;MATCHSTR&gt;&gt; = &lt;&lt;FIELD&gt;&gt; - medianAbsDev&lt;&lt;MATCHSTR&gt;&gt;*exact(5), 
+        upperBound&lt;&lt;MATCHSTR&gt;&gt; = &lt;&lt;FIELD&gt;&gt; + medianAbsDev&lt;&lt;MATCHSTR&gt;&gt;*exact(5), 
+        isOutlier&lt;&lt;MATCHSTR&gt;&gt; = if(d&lt;&lt;MATCHSTR&gt;&gt; &lt; lowerBound&lt;&lt;MATCHSTR&gt;&gt; OR d&lt;&lt;MATCHSTR&gt;&gt; &gt; upperBound&lt;&lt;MATCHSTR&gt;&gt;, 1, 0), 
+        isOutlier = isOutlier + isOutlier&lt;&lt;MATCHSTR&gt;&gt;] 
+| eval isOutlier=if(isOutlier&gt;3.5, 1, 0)
+| fields _time Today isOutlier</query>
+          <earliest>-8d</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisLabelsY2.majorUnit">1</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.overlayFields">isOutlier</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>| tstats prestats=t count WHERE index=main by _time span=300s 
+| timechart span=300s partial=f count 
+| timewrap d series=short 
+| rename s0 AS Today 
+| foreach s* 
+    [ eval d&lt;&lt;MATCHSTR&gt;&gt; = Today - &lt;&lt;FIELD&gt;&gt;] 
+| streamstats window=12 median(d*) as median_*
+| foreach median_* 
+    [ eval absDev&lt;&lt;MATCHSTR&gt;&gt; = abs(d&lt;&lt;MATCHSTR&gt;&gt; - &lt;&lt;FIELD&gt;&gt;)] 
+| streamstats window=12 median(absDev*) as medianAbsDev*
+| eval isOutlier = 0
+| foreach median_* 
+    [ eval 
+        lowerBound&lt;&lt;MATCHSTR&gt;&gt; = &lt;&lt;FIELD&gt;&gt; - medianAbsDev&lt;&lt;MATCHSTR&gt;&gt;*exact(5), 
+        upperBound&lt;&lt;MATCHSTR&gt;&gt; = &lt;&lt;FIELD&gt;&gt; + medianAbsDev&lt;&lt;MATCHSTR&gt;&gt;*exact(5), 
+        isOutlier&lt;&lt;MATCHSTR&gt;&gt; = if(d&lt;&lt;MATCHSTR&gt;&gt; &lt; lowerBound&lt;&lt;MATCHSTR&gt;&gt; OR d&lt;&lt;MATCHSTR&gt;&gt; &gt; upperBound&lt;&lt;MATCHSTR&gt;&gt;, 1, 0), 
+        isOutlier = isOutlier + isOutlier&lt;&lt;MATCHSTR&gt;&gt;] 
+| eval isOutlier=if(isOutlier&gt;3.5, 1, 0)
+| fields _time Today d* isOutlier</query>
+          <earliest>-8d</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="number" field="outlier"></format>
+        <format type="color" field="outlier">
+          <colorPalette type="list">[#6DB7C6,#ED8440]</colorPalette>
+          <scale type="threshold">3</scale>
+        </format>
+        <format type="color" field="isOutlier">
+          <colorPalette type="list">[#65A637,#ED8440]</colorPalette>
+          <scale type="threshold">1</scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
