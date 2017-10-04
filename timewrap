@@ -1,5 +1,5 @@
-
 ##Example SPL for a search running over the last 8 days, no snap to start of day
+##Replace the first 2 pipes with a timechart generating search that makes sense against your data!
 ##The Window is set to 12 and assumes you are using 5m intervals
 ##The "exact(5)" creates a multipler of 5, you can alter this to tweak sensitivity of the outlier search, or use MLTK to experiement
 
