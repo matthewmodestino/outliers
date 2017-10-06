@@ -16,3 +16,6 @@ For example, in the timewrap panels, my search begins with:
 Replace this with whatever timechart generating search makes sense for you!
 
 I have also simply provided text files with the SPL for each method if you want to skip installing the sample app. 
+
+
+KNOWN ISSUE : Timepicker on timewrap dash is not integrated into the searches, was working with fixed timeframe in the SPL, will open issue and fix when i have the chance. 
