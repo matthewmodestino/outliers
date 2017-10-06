@@ -2,6 +2,7 @@
 ##Replace the first 2 pipes with a timechart generating search that makes sense against your data!
 ##The Window is set to 12 and assumes you are using 5m intervals
 ##The "exact(5)" creates a multipler of 5, you can alter this to tweak sensitivity of the outlier search, or use MLTK to experiement
+##Be Sure to overlay the isOutlier on the value and set view on Y axis in chart options
 
 | tstats prestats=t count WHERE index=main by _time span=300s 
 | timechart span=300s partial=f count 
